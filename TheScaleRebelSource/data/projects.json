@@ -1,17 +1,17 @@
 [
   {
-    "name": "WebDesignExample.com",
-    "url": "https://webdesignexample.com",
-    "description": "Demo environment that updates with the current project in progress"
-  },
-  {
     "name": "MadisonTattooCompany.com",
     "url": "https://madisontattoocompany.com",
-    "description": "Wisconsin tattoo artist (in progress)"
+    "description": "Full product build — design, code, security, deployment. Delivered and sold."
   },
   {
     "name": "BeingJonShaw.com",
     "url": "https://beingjonshaw.com",
-    "description": "Personal webpage"
+    "description": "Personal brand site — clean, fast, hand-coded."
+  },
+  {
+    "name": "TheScaleRebel.com",
+    "url": "https://thescalerebel.com",
+    "description": "This site. Built the same way I build yours."
   }
 ]
