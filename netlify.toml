@@ -1,0 +1,4 @@
+# Root-level config — tells Netlify where the site source lives.
+# Full build/deploy configuration is in TheScaleRebelSource/netlify.toml.
+[build]
+  base = "TheScaleRebelSource"
