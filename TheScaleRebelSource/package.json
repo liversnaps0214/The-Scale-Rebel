@@ -1,0 +1,8 @@
+{
+  "name": "the-scale-rebel",
+  "private": true,
+  "devDependencies": {
+    "@netlify/edge-functions": "^3.0.3",
+    "@netlify/functions": "^2.0.0"
+  }
+}

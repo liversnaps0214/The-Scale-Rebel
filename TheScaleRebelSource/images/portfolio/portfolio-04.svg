@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" role="img" aria-label="PORTFOLIO 04">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E1E1E"/>
+      <stop offset="1" stop-color="#0F0F0F"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+  <rect x="84" y="84" width="1032" height="1032" rx="40" fill="none" stroke="#B8B4AE" opacity="0.30" stroke-width="6"/>
+  <circle cx="600" cy="520" r="200" fill="none" stroke="#0F0F0F" stroke-width="10" opacity="0.55"/>
+  <path d="M420 760 C520 680, 680 680, 780 760" fill="none" stroke="#6F3B2C" stroke-width="10" opacity="0.55" stroke-linecap="round"/>
+  <text x="600" y="920" text-anchor="middle" fill="#F5F5F3" opacity="0.92" font-family="Inter, Arial, sans-serif" font-size="34" letter-spacing="2">PORTFOLIO 04</text>
+  <text x="600" y="970" text-anchor="middle" fill="#B8B4AE" opacity="0.9" font-family="ui-monospace, Menlo, monospace" font-size="18" letter-spacing="3">REPLACE WITH PHOTO</text>
+</svg>

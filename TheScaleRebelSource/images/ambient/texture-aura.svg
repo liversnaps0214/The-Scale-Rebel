@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000" aria-hidden="true">
+  <defs>
+    <radialGradient id="mist" cx="50%" cy="46%" r="68%">
+      <stop offset="0" stop-color="#F5F5F3" stop-opacity="0.0"/>
+      <stop offset="0.55" stop-color="#F5F5F3" stop-opacity="0.0"/>
+      <stop offset="0.82" stop-color="#1E1E1E" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#0F0F0F" stop-opacity="0.34"/>
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="2.2"/></filter>
+  </defs>
+  <rect width="1400" height="1000" fill="url(#mist)"/>
+  <g opacity="0.16" filter="url(#blur)" stroke="#0F0F0F" stroke-width="2" fill="none">
+    <path d="M60 200 C220 120, 340 240, 500 160 C650 90, 760 100, 920 170" />
+    <path d="M1340 240 C1180 150, 1060 290, 900 210 C750 130, 660 120, 520 190" />
+    <path d="M80 820 C250 720, 380 870, 540 770 C700 670, 840 670, 980 750" />
+    <path d="M1320 790 C1140 690, 1020 850, 860 740 C710 640, 610 630, 470 720" />
+  </g>
+  <g opacity="0.10" stroke="#4A5560" stroke-width="2" fill="none">
+    <path d="M160 130 C290 40, 420 200, 560 90" />
+    <path d="M1240 130 C1110 40, 980 200, 840 90" />
+    <path d="M160 910 C290 820, 420 980, 560 870" />
+    <path d="M1240 910 C1110 820, 980 980, 840 870" />
+  </g>
+</svg>

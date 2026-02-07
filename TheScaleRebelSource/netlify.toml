@@ -1,0 +1,309 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  edge_functions = "netlify/edge-functions"
+
+# ============================================================================
+# SECURITY HEADERS
+# ============================================================================
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Prevent clickjacking attacks by denying all framing
+    X-Frame-Options = "DENY"
+
+    # Prevent MIME type sniffing attacks
+    X-Content-Type-Options = "nosniff"
+
+    # Control referrer information leakage
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Content Security Policy - strict mode
+    # - default-src 'self': Only allow resources from same origin by default
+    # - img-src 'self' data:: Allow images from self and data URIs (for inline SVGs)
+    # - style-src 'self' 'unsafe-inline': Allow styles from self and inline (for CSS variables)
+    # - font-src 'self' https://fonts.gstatic.com: Allow fonts from self and Google Fonts
+    # - script-src 'self': Only allow scripts from same origin (no inline, no eval)
+    # - connect-src 'self' https://api.resend.com: Allow XHR/fetch to self and Resend API
+    # - base-uri 'self': Prevent base tag hijacking
+    # - form-action 'self': Forms can only submit to same origin
+    # - frame-ancestors 'none': Prevent framing (CSP version of X-Frame-Options)
+    # - object-src 'none': Block plugins (Flash, Java, etc.)
+    # - upgrade-insecure-requests: Upgrade HTTP to HTTPS
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://api.resend.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+
+    # Permissions Policy - disable all sensitive APIs not needed for a static site
+    Permissions-Policy = "accelerometer=(), autoplay=(), camera=(), cross-origin-isolated=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), xr-spatial-tracking=()"
+
+    # HTTP Strict Transport Security - force HTTPS for 2 years, include subdomains
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+
+    # Cross-Origin policies for additional isolation
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Resource-Policy = "same-origin"
+
+    # Legacy XSS protection (mostly superseded by CSP but kept for older browsers)
+    X-XSS-Protection = "1; mode=block"
+
+    # Prevent DNS prefetching to protect privacy
+    X-DNS-Prefetch-Control = "off"
+
+    # Remove server identification where possible
+    X-Powered-By = ""
+
+# ============================================================================
+# CACHING RULES
+# ============================================================================
+
+# HTML files - never cache to ensure fresh content
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+
+# Main stylesheet - cache for 1 hour with revalidation
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+# CSS directory files
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+# JavaScript - cache for 1 hour with revalidation
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
+
+# JSON data - short cache for dynamic data
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Images - long cache (immutable for versioned assets)
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Open Graph image
+[[headers]]
+  for = "/og.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Favicon
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Partials - never cache (internal use)
+[[headers]]
+  for = "/partials/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Robots-Tag = "noindex, nofollow"
+
+# ============================================================================
+# REDIRECTS - SECURITY BLOCKS
+# ============================================================================
+
+# Block WordPress paths (return 404 to appear as if nothing exists)
+[[redirects]]
+  from = "/wp-admin"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/wp-admin/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/wp-content/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/wp-includes/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/wp-login.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/xmlrpc.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/wp-config.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block PHP files entirely
+[[redirects]]
+  from = "/*.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/**/*.php"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block ASP/ASPX files
+[[redirects]]
+  from = "/*.asp"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.aspx"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block common CMS admin paths
+[[redirects]]
+  from = "/administrator/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/phpmyadmin/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block sensitive file access
+[[redirects]]
+  from = "/.env"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.git/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.svn/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.htaccess"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.htpasswd"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block backup files
+[[redirects]]
+  from = "/*.bak"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.sql"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.backup"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Block config files
+[[redirects]]
+  from = "/web.config"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/config.yml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/config.yaml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# ============================================================================
+# VALID API REDIRECTS
+# ============================================================================
+
+# Contact form endpoint
+[[redirects]]
+  from = "/api/send-email"
+  to = "/.netlify/functions/send-email"
+  status = 200
+
+# ============================================================================
+# FORCE HTTPS
+# ============================================================================
+
+# Ensure all HTTP traffic is redirected to HTTPS
+[[redirects]]
+  from = "http://thescalerebel.com/*"
+  to = "https://thescalerebel.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.thescalerebel.com/*"
+  to = "https://thescalerebel.com/:splat"
+  status = 301
+  force = true
+
+# Redirect www to non-www (canonical URL)
+[[redirects]]
+  from = "https://www.thescalerebel.com/*"
+  to = "https://thescalerebel.com/:splat"
+  status = 301
+  force = true

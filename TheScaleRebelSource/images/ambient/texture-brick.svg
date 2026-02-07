@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" aria-hidden="true">
+  <defs>
+    <linearGradient id="mortar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B8B4AE" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#B8B4AE" stop-opacity="0.12"/>
+    </linearGradient>
+
+    <filter id="grit" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="8" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="
+        0 0 0 0 0.30
+        0 0 0 0 0.30
+        0 0 0 0 0.30
+        0 0 0 0.20 0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="multiply"/>
+    </filter>
+
+    <filter id="softlight" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="4" stitchTiles="stitch" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 0.55 0" result="alpha"/>
+      <feGaussianBlur in="alpha" stdDeviation="12" result="blur"/>
+      <feBlend in="SourceGraphic" in2="blur" mode="soft-light"/>
+    </filter>
+
+    <pattern id="brick" width="280" height="140" patternUnits="userSpaceOnUse">
+      <rect width="280" height="140" fill="url(#mortar)"/>
+      <!-- row 1 -->
+      <rect x="12" y="14" width="120" height="46" rx="4" fill="#6F3B2C" fill-opacity="0.68"/>
+      <rect x="142" y="14" width="126" height="46" rx="4" fill="#5b2f24" fill-opacity="0.66"/>
+      <!-- row 2 (offset) -->
+      <rect x="-40" y="74" width="126" height="52" rx="4" fill="#7a4637" fill-opacity="0.62"/>
+      <rect x="96" y="74" width="118" height="52" rx="4" fill="#6a3a2d" fill-opacity="0.66"/>
+      <rect x="224" y="74" width="96" height="52" rx="4" fill="#5b2f24" fill-opacity="0.64"/>
+      <!-- subtle highlights/shadows -->
+      <g opacity="0.18">
+        <rect x="12" y="14" width="120" height="12" rx="4" fill="#F5F5F3"/>
+        <rect x="142" y="14" width="126" height="10" rx="4" fill="#F5F5F3"/>
+      </g>
+      <g opacity="0.12">
+        <rect x="12" y="48" width="120" height="12" rx="4" fill="#0F0F0F"/>
+        <rect x="142" y="50" width="126" height="10" rx="4" fill="#0F0F0F"/>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#brick)"/>
+  <rect width="1400" height="900" filter="url(#softlight)" opacity="0.85"/>
+  <rect width="1400" height="900" filter="url(#grit)" opacity="0.65"/>
+</svg>

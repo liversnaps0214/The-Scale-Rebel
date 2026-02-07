@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+
+  <title>Contact — Scale Rebel Studio</title>
+  <meta name="description" content="Begin your premium web design project. Share your vision and receive a thoughtful response within one business day.">
+
+  <link rel="canonical" href="https://thescalerebel.com/contact.html">
+  <meta name="theme-color" content="#0F0F0F">
+
+  <meta property="og:site_name" content="Scale Rebel Studio">
+  <meta property="og:title" content="Contact — Scale Rebel Studio">
+  <meta property="og:description" content="Begin your premium web design project. Share your vision.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://thescalerebel.com/contact.html">
+  <meta property="og:image" content="https://thescalerebel.com/og.png">
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+
+  <script defer src="/js/include.js"></script>
+  <script defer src="/js/main.js"></script>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <main id="main" tabindex="-1">
+    <section class="section page-intro">
+      <div class="container">
+        <p class="kicker">Get in Touch</p>
+        <h1>Begin your project</h1>
+        <p class="lede">Share your vision. Receive a thoughtful, personalized response within one business day.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="split">
+          <div class="form-card">
+            <form data-contact-form>
+              <!-- Honeypot field - hidden from users, bots will fill it -->
+              <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="name">Your Name</label>
+                  <input id="name" name="name" autocomplete="name" required placeholder="Full name">
+                </div>
+                <div>
+                  <label for="email">Email Address</label>
+                  <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@company.com">
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="company">Company</label>
+                  <input id="company" name="company" autocomplete="organization" placeholder="Your business name">
+                </div>
+                <div>
+                  <label for="budget">Investment Range</label>
+                  <select id="budget" name="budget" autocomplete="off">
+                    <option value="">Select range…</option>
+                    <option>$3,000 – $5,000</option>
+                    <option>$5,000 – $10,000</option>
+                    <option>$10,000 – $20,000</option>
+                    <option>$20,000+</option>
+                    <option>To be discussed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label for="message">Tell Us About Your Project</label>
+                <textarea id="message" name="message" rows="6" required placeholder="Share your goals, vision, and what success looks like for your project."></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button class="button button--primary" type="submit">Submit Inquiry</button>
+                <div class="notice" role="status" aria-live="polite" data-notice></div>
+              </div>
+            </form>
+
+            <p class="fineprint">Your information is handled with care. No spam, no mailing lists.</p>
+          </div>
+
+          <div class="panel">
+            <h3>What to Expect</h3>
+            <ul class="bullets">
+              <li>A personal response within one business day</li>
+              <li>Thoughtful questions to understand your vision</li>
+              <li>A clear proposal tailored to your objectives</li>
+              <li>Transparent pricing with no hidden costs</li>
+            </ul>
+            <div style="margin-top:1.25rem;">
+              <a class="button" href="/how-it-works.html">View Our Process</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>

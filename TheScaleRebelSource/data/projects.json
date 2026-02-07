@@ -1,0 +1,17 @@
+[
+  {
+    "name": "WebDesignExample.com",
+    "url": "https://webdesignexample.com",
+    "description": "Demo environment that updates with the current project in progress"
+  },
+  {
+    "name": "MadisonTattooCompany.com",
+    "url": "https://madisontattoocompany.com",
+    "description": "Wisconsin tattoo artist (in progress)"
+  },
+  {
+    "name": "BeingJonShaw.com",
+    "url": "https://beingjonshaw.com",
+    "description": "Personal webpage"
+  }
+]

@@ -1,0 +1,32 @@
+# Scale Rebel Studio - Robots.txt
+# This is a static HTML/CSS/JS site - no dynamic content or CMS
+
+User-agent: *
+Allow: /
+Sitemap: https://thescalerebel.com/sitemap.xml
+
+# Block internal partials from indexing
+Disallow: /partials/
+
+# Block access to paths that don't exist on this static site
+# These are commonly probed by bots looking for vulnerabilities
+Disallow: /wp-admin/
+Disallow: /wp-content/
+Disallow: /wp-includes/
+Disallow: /wp-login.php
+Disallow: /xmlrpc.php
+Disallow: /administrator/
+Disallow: /phpmyadmin/
+Disallow: /cgi-bin/
+Disallow: /*.php$
+Disallow: /*.asp$
+Disallow: /*.aspx$
+Disallow: /.git/
+Disallow: /.env
+Disallow: /admin/
+Disallow: /login/
+Disallow: /api/
+
+# Rate limit aggressive crawlers
+# Well-behaved bots will respect crawl-delay
+Crawl-delay: 1
