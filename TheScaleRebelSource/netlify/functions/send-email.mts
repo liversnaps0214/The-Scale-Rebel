@@ -1,4 +1,5 @@
 import type { Context, Config } from "@netlify/functions";
+import { neon } from "@netlify/neon";
 
 interface FormData {
   name: string;
@@ -295,6 +296,28 @@ ${message}
     } catch (confirmError) {
       // Don't fail the whole request if confirmation email fails
       console.error("Failed to send confirmation email:", confirmError);
+    }
+
+    // Store inquiry in database
+    try {
+      const sql = neon();
+      await sql`CREATE TABLE IF NOT EXISTS inquiries (
+        id SERIAL PRIMARY KEY,
+        client_id INTEGER,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        company TEXT,
+        budget TEXT,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`;
+      const company = formData.company ? sanitizeInput(formData.company, 200) : null;
+      const budget = formData.budget ? sanitizeInput(formData.budget, 100) : null;
+      await sql`INSERT INTO inquiries (name, email, company, budget, message) VALUES (${name}, ${email}, ${company}, ${budget}, ${message})`;
+      console.log("Inquiry stored in database");
+    } catch (dbError) {
+      // Don't fail the request if database storage fails
+      console.error("Failed to store inquiry in database:", dbError);
     }
 
     return new Response(

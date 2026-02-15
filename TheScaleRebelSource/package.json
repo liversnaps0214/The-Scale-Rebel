@@ -4,5 +4,8 @@
   "devDependencies": {
     "@netlify/edge-functions": "^3.0.3",
     "@netlify/functions": "^2.0.0"
+  },
+  "dependencies": {
+    "@netlify/neon": "^0.1.2"
   }
 }

@@ -283,7 +283,10 @@ export default async (request: Request, context: Context): Promise<Response> => 
 
   // Check for HTTP method abuse (block unusual methods for static sites)
   const method = request.method.toUpperCase();
-  const allowedMethods = ["GET", "HEAD", "OPTIONS", "POST"];
+  const isAdminPath = pathname.startsWith("/api/admin/");
+  const allowedMethods = isAdminPath
+    ? ["GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"]
+    : ["GET", "HEAD", "OPTIONS", "POST"];
   if (!allowedMethods.includes(method)) {
     console.log(`Blocked request (method): ${method} ${pathname}`);
     return new Response("Method Not Allowed", { status: 405 });
@@ -291,7 +294,7 @@ export default async (request: Request, context: Context): Promise<Response> => 
 
   // For POST requests, only allow to specific endpoints
   if (method === "POST") {
-    const allowedPostPaths = ["/api/send-email", "/.netlify/functions/"];
+    const allowedPostPaths = ["/api/send-email", "/api/admin/", "/.netlify/functions/"];
     const isAllowedPost = allowedPostPaths.some(
       (path) => pathname.startsWith(path)
     );
