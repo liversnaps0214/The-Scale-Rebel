@@ -263,6 +263,40 @@ ${message}
     }
 
     console.log("Email sent successfully");
+
+    // Send confirmation email to the person who submitted the form
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [email],
+          subject: "Got your message — Scale Rebel Studio",
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
+              <p>Hey ${escapeHtml(name.split(" ")[0])},</p>
+              <p>Just confirming I received your inquiry. I'll review everything and get back to you within one week.</p>
+              <p>In the meantime, feel free to reply to this email if you have anything to add.</p>
+              <p style="margin-top: 2em;">
+                — Scale Rebel Studio<br>
+                <a href="https://thescalerebel.com" style="color: #555;">thescalerebel.com</a>
+              </p>
+            </div>
+          `,
+          text: `Hey ${name.split(" ")[0]},\n\nJust confirming I received your inquiry. I'll review everything and get back to you within one week.\n\nIn the meantime, feel free to reply to this email if you have anything to add.\n\n— Scale Rebel Studio\nhttps://thescalerebel.com`,
+          reply_to: recipientEmail,
+        }),
+      });
+      console.log("Confirmation email sent to submitter");
+    } catch (confirmError) {
+      // Don't fail the whole request if confirmation email fails
+      console.error("Failed to send confirmation email:", confirmError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, message: "Email sent successfully" }),
       {
