@@ -284,11 +284,11 @@ ${message}
               <p>In the meantime, feel free to reply to this email if you have anything to add.</p>
               <p style="margin-top: 2em;">
                 — Scale Rebel Studio<br>
-                <a href="https://thescalerebel.com" style="color: #555;">thescalerebel.com</a>
+                <a href="https://www.thescalerebel.com" style="color: #555;">thescalerebel.com</a>
               </p>
             </div>
           `,
-          text: `Hey ${name.split(" ")[0]},\n\nJust confirming I received your inquiry. I'll review everything and get back to you within one week.\n\nIn the meantime, feel free to reply to this email if you have anything to add.\n\n— Scale Rebel Studio\nhttps://thescalerebel.com`,
+          text: `Hey ${name.split(" ")[0]},\n\nJust confirming I received your inquiry. I'll review everything and get back to you within one week.\n\nIn the meantime, feel free to reply to this email if you have anything to add.\n\n— Scale Rebel Studio\nhttps://www.thescalerebel.com`,
           reply_to: recipientEmail,
         }),
       });

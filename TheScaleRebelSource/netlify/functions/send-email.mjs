@@ -83,8 +83,8 @@ export async function handler(event) {
         from: FROM_EMAIL,
         to: email,
         subject: "Got your message — Scale Rebel Studio",
-        html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;"><p>Hey ${firstName},</p><p>Just confirming I received your inquiry. I'll review everything and get back to you within one week.</p><p>In the meantime, feel free to reply to this email if you have anything to add.</p><p style="margin-top: 2em;">— Scale Rebel Studio<br><a href="https://thescalerebel.com" style="color: #555;">thescalerebel.com</a></p></div>`,
-        text: `Hey ${firstName},\n\nJust confirming I received your inquiry. I'll review everything and get back to you within one week.\n\nIn the meantime, feel free to reply to this email if you have anything to add.\n\n— Scale Rebel Studio\nhttps://thescalerebel.com`,
+        html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;"><p>Hey ${firstName},</p><p>Just confirming I received your inquiry. I'll review everything and get back to you within one week.</p><p>In the meantime, feel free to reply to this email if you have anything to add.</p><p style="margin-top: 2em;">— Scale Rebel Studio<br><a href="https://www.thescalerebel.com" style="color: #555;">thescalerebel.com</a></p></div>`,
+        text: `Hey ${firstName},\n\nJust confirming I received your inquiry. I'll review everything and get back to you within one week.\n\nIn the meantime, feel free to reply to this email if you have anything to add.\n\n— Scale Rebel Studio\nhttps://www.thescalerebel.com`,
         reply_to: CONTACT_EMAIL,
       })
     });

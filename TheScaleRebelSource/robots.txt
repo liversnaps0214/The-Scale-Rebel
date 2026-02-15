@@ -3,7 +3,7 @@
 
 User-agent: *
 Allow: /
-Sitemap: https://thescalerebel.com/sitemap.xml
+Sitemap: https://www.thescalerebel.com/sitemap.xml
 
 # Block internal partials from indexing
 Disallow: /partials/

@@ -285,25 +285,35 @@
   status = 200
 
 # ============================================================================
-# FORCE HTTPS
+# ADMIN PANEL
 # ============================================================================
 
-# Ensure all HTTP traffic is redirected to HTTPS
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+# ============================================================================
+# FORCE HTTPS + CANONICAL URL (www)
+# ============================================================================
+
+# Redirect HTTP non-www to HTTPS www
 [[redirects]]
   from = "http://thescalerebel.com/*"
-  to = "https://thescalerebel.com/:splat"
+  to = "https://www.thescalerebel.com/:splat"
   status = 301
   force = true
 
+# Redirect HTTP www to HTTPS www
 [[redirects]]
   from = "http://www.thescalerebel.com/*"
-  to = "https://thescalerebel.com/:splat"
+  to = "https://www.thescalerebel.com/:splat"
   status = 301
   force = true
 
-# Redirect www to non-www (canonical URL)
+# Redirect non-www to www (canonical URL)
 [[redirects]]
-  from = "https://www.thescalerebel.com/*"
-  to = "https://thescalerebel.com/:splat"
+  from = "https://thescalerebel.com/*"
+  to = "https://www.thescalerebel.com/:splat"
   status = 301
   force = true
