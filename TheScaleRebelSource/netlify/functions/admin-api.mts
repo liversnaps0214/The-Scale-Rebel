@@ -407,7 +407,7 @@ async function updateClient(
     values.push(id);
     const query = `UPDATE clients SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
 
-    const result = await sql.query(query, values);
+    const result = await sql(query, values);
 
     if (result.length === 0) {
       return errorResponse("Client not found", 404);
@@ -508,33 +508,32 @@ export default async function handler(context: Context) {
     return handleCors();
   }
 
-  // Initialize database
-  const sql = neon();
-  await initializeDatabase(sql);
-
-  const url = new URL(context.request.url);
-  const pathname = url.pathname;
-
-  // OTP routes (no auth required)
-  if (context.request.method === "POST") {
-    if (pathname.match(/\/api\/admin\/otp\/send$/)) {
-      return await sendOTP(context, sql);
-    }
-    if (pathname.match(/\/api\/admin\/otp\/verify$/)) {
-      return await verifyOTP(context, sql);
-    }
-    if (pathname.match(/\/api\/admin\/otp\/logout$/)) {
-      return await logout(context, sql);
-    }
-  }
-
-  // All other routes require authentication
-  if (!(await checkAuth(context, sql))) {
-    return errorResponse("Unauthorized", 401);
-  }
-
-  // Route handling
   try {
+    // Initialize database connection
+    const sql = neon();
+    await initializeDatabase(sql);
+
+    const url = new URL(context.request.url);
+    const pathname = url.pathname;
+
+    // OTP routes (no auth required)
+    if (context.request.method === "POST") {
+      if (pathname.match(/\/api\/admin\/otp\/send$/)) {
+        return await sendOTP(context, sql);
+      }
+      if (pathname.match(/\/api\/admin\/otp\/verify$/)) {
+        return await verifyOTP(context, sql);
+      }
+      if (pathname.match(/\/api\/admin\/otp\/logout$/)) {
+        return await logout(context, sql);
+      }
+    }
+
+    // All other routes require authentication
+    if (!(await checkAuth(context, sql))) {
+      return errorResponse("Unauthorized", 401);
+    }
+
     // GET routes
     if (context.request.method === "GET") {
       if (pathname.match(/\/api\/admin\/clients$/)) {
