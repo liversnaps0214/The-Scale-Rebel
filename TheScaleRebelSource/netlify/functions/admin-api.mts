@@ -189,21 +189,42 @@ async function sendOTP(context: Context, sql: ReturnType<typeof neon>) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: `The Scale Rebel <${fromEmail}>`,
         to: [email],
-        subject: `Your Scale Rebel admin login code: ${code}`,
+        subject: "Your admin login code",
         html: `
-          <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 420px; margin: 0 auto; padding: 40px 20px;">
-            <div style="background-color: #0F0F0F; border-radius: 8px; padding: 40px; text-align: center;">
-              <h1 style="color: #E8E4DF; font-size: 20px; margin: 0 0 8px 0;">Scale Rebel Admin</h1>
-              <p style="color: #888; font-size: 14px; margin: 0 0 32px 0;">Your one-time login code</p>
-              <div style="background-color: #1A1A1A; border: 1px solid #2A2A2A; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
-                <span style="color: #E8E4DF; font-size: 36px; font-weight: 700; letter-spacing: 8px;">${code}</span>
-              </div>
-              <p style="color: #888; font-size: 13px; margin: 0;">This code expires in 10 minutes.</p>
-              <p style="color: #888; font-size: 13px; margin: 8px 0 0 0;">If you didn't request this, ignore this email.</p>
-            </div>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 20px;">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 440px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e4e4e7;">
+                    <tr>
+                      <td style="padding: 40px 36px 32px;">
+                        <p style="margin: 0 0 6px; font-size: 14px; color: #71717a;">thescalerebel.com</p>
+                        <h1 style="margin: 0 0 24px; font-size: 22px; font-weight: 600; color: #18181b;">Sign in to your admin dashboard</h1>
+                        <p style="margin: 0 0 24px; font-size: 15px; color: #3f3f46; line-height: 1.5;">Enter this code to verify your identity. It expires in 10 minutes.</p>
+                        <div style="background-color: #fafafa; border: 1px solid #e4e4e7; border-radius: 6px; padding: 20px; text-align: center; margin-bottom: 24px;">
+                          <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #18181b; font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;">${code}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 13px; color: #a1a1aa; line-height: 1.5;">If you didn't request this code, you can safely ignore this email. No one can access your account without this code.</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 0 36px 32px;">
+                        <div style="border-top: 1px solid #e4e4e7; padding-top: 20px;">
+                          <p style="margin: 0; font-size: 12px; color: #a1a1aa;">The Scale Rebel &mdash; Websites Worth Owning</p>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `,
       }),
     });
