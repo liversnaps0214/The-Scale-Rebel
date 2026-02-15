@@ -3,7 +3,10 @@
 // ============================================================================
 
 const state = {
-  view: 'login', // login, clientList, clientDetail, newClient, inquiries
+  view: 'login', // login, verifyOtp, clientList, clientDetail, newClient, inquiries
+  loginEmail: '', // email entered during OTP login
+  otpSending: false, // loading state for OTP send
+  otpVerifying: false, // loading state for OTP verify
   currentClientId: null,
   clients: [],
   inquiries: [],
@@ -21,13 +24,13 @@ const state = {
 // ============================================================================
 
 async function api(method, path, body = null) {
-  const password = sessionStorage.getItem('admin_password');
+  const token = sessionStorage.getItem('admin_token');
   const headers = {
     'Content-Type': 'application/json',
   };
 
-  if (password) {
-    headers['Authorization'] = password;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const options = {
@@ -43,8 +46,9 @@ async function api(method, path, body = null) {
     const response = await fetch(path, options);
 
     if (response.status === 401) {
-      sessionStorage.removeItem('admin_password');
+      sessionStorage.removeItem('admin_token');
       state.view = 'login';
+      state.loginEmail = '';
       render();
       showMessage('Session expired. Please log in again.', 'error');
       return null;
@@ -200,8 +204,16 @@ function render() {
   const app = document.getElementById('app');
 
   // Check authentication
-  const password = sessionStorage.getItem('admin_password');
-  if (!password) {
+  const token = sessionStorage.getItem('admin_token');
+
+  // Show OTP verification screen
+  if (state.view === 'verifyOtp') {
+    app.innerHTML = renderVerifyOtp();
+    attachVerifyOtpListeners();
+    return;
+  }
+
+  if (!token) {
     app.innerHTML = renderLogin();
     attachLoginListeners();
     return;
@@ -232,22 +244,66 @@ function renderLogin() {
       <div class="login-box">
         <h1>Admin Dashboard</h1>
         <p>Scale Rebel Studio CRM</p>
+        ${renderMessage()}
         <form id="login-form">
           <div class="form-group">
-            <label for="password">Password</label>
+            <label for="login-email">Email</label>
             <input
-              type="password"
-              id="password"
-              name="password"
+              type="email"
+              id="login-email"
+              name="email"
               required
               autofocus
-              placeholder="Enter admin password"
+              placeholder="Enter your admin email"
+              value="${state.loginEmail}"
             >
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">
-            Sign In
+          <button type="submit" class="btn btn-primary" style="width: 100%;" ${state.otpSending ? 'disabled' : ''}>
+            ${state.otpSending ? 'Sending code...' : 'Send Login Code'}
           </button>
         </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderVerifyOtp() {
+  return `
+    <div class="login-container">
+      <div class="login-box">
+        <h1>Check Your Email</h1>
+        <p>We sent a 6-digit code to <strong>${state.loginEmail}</strong></p>
+        ${renderMessage()}
+        <form id="verify-form">
+          <div class="form-group">
+            <label for="otp-code">Verification Code</label>
+            <input
+              type="text"
+              id="otp-code"
+              name="code"
+              required
+              autofocus
+              placeholder="Enter 6-digit code"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: 700;"
+            >
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;" ${state.otpVerifying ? 'disabled' : ''}>
+            ${state.otpVerifying ? 'Verifying...' : 'Verify & Sign In'}
+          </button>
+        </form>
+        <div style="text-align: center; margin-top: 16px;">
+          <button id="back-to-email" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; font-family: inherit;">
+            \u2190 Use a different email
+          </button>
+          <span style="color: var(--border); margin: 0 8px;">|</span>
+          <button id="resend-code" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; font-family: inherit;">
+            Resend code
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -613,13 +669,107 @@ function renderMessage() {
 function attachLoginListeners() {
   const form = document.getElementById('login-form');
   if (form) {
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
-      const password = document.getElementById('password').value;
-      sessionStorage.setItem('admin_password', password);
-      state.view = 'clientList';
-      loadClients();
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) return;
+
+      state.loginEmail = email;
+      state.otpSending = true;
       render();
+
+      try {
+        const response = await fetch('/api/admin/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.sent) {
+          state.otpSending = false;
+          state.view = 'verifyOtp';
+          render();
+        } else {
+          state.otpSending = false;
+          showMessage(data.error || 'Failed to send code. Try again.', 'error');
+        }
+      } catch (error) {
+        state.otpSending = false;
+        showMessage('Network error. Check your connection.', 'error');
+      }
+    });
+  }
+}
+
+function attachVerifyOtpListeners() {
+  const form = document.getElementById('verify-form');
+  if (form) {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const code = document.getElementById('otp-code').value.trim();
+      if (!code) return;
+
+      state.otpVerifying = true;
+      render();
+
+      try {
+        const response = await fetch('/api/admin/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: state.loginEmail, code }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.token) {
+          sessionStorage.setItem('admin_token', data.token);
+          state.otpVerifying = false;
+          state.view = 'clientList';
+          state.loginEmail = '';
+          await loadClients();
+          render();
+        } else {
+          state.otpVerifying = false;
+          showMessage(data.error || 'Invalid code. Try again.', 'error');
+        }
+      } catch (error) {
+        state.otpVerifying = false;
+        showMessage('Network error. Check your connection.', 'error');
+      }
+    });
+  }
+
+  // Back to email
+  const backBtn = document.getElementById('back-to-email');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      state.view = 'login';
+      render();
+    });
+  }
+
+  // Resend code
+  const resendBtn = document.getElementById('resend-code');
+  if (resendBtn) {
+    resendBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/admin/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: state.loginEmail }),
+        });
+
+        if (response.ok) {
+          showMessage('New code sent. Check your email.', 'success');
+        } else {
+          const data = await response.json().catch(() => ({}));
+          showMessage(data.error || 'Failed to resend. Try again.', 'error');
+        }
+      } catch (error) {
+        showMessage('Network error. Check your connection.', 'error');
+      }
     });
   }
 }
@@ -841,9 +991,21 @@ function attachTabListeners() {
 function attachLogoutListener() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      sessionStorage.removeItem('admin_password');
+    logoutBtn.addEventListener('click', async () => {
+      // Invalidate session on server
+      const token = sessionStorage.getItem('admin_token');
+      if (token) {
+        fetch('/api/admin/otp/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }).catch(() => {}); // Fire and forget
+      }
+      sessionStorage.removeItem('admin_token');
       state.view = 'login';
+      state.loginEmail = '';
       state.currentClientId = null;
       state.searchQuery = '';
       render();

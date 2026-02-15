@@ -35,23 +35,71 @@ async function initializeDatabase(sql: ReturnType<typeof neon>) {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
+
+    // Create OTP codes table
+    await sql`
+      CREATE TABLE IF NOT EXISTS otp_codes (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        code TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    // Create admin sessions table
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        id SERIAL PRIMARY KEY,
+        token TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
   } catch (error) {
     console.error("Database initialization error:", error);
     throw error;
   }
 }
 
-// Password authentication middleware
-function checkAuth(context: Context): boolean {
-  const authHeader = context.request.headers.get("Authorization");
-  const adminPassword = Netlify.env.get("ADMIN_PASSWORD");
+// Generate a random 6-digit OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
-  if (!adminPassword) {
-    console.warn("ADMIN_PASSWORD not configured");
+// Generate a random session token
+function generateSessionToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  for (let i = 0; i < 64; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+// Session-based authentication
+async function checkAuth(context: Context, sql: ReturnType<typeof neon>): Promise<boolean> {
+  const authHeader = context.request.headers.get("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return false;
   }
 
-  return authHeader === adminPassword;
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    const sessions = await sql`
+      SELECT * FROM admin_sessions
+      WHERE token = ${token}
+        AND expires_at > NOW()
+    `;
+    return sessions.length > 0;
+  } catch (error) {
+    console.error("Auth check error:", error);
+    return false;
+  }
 }
 
 // JSON response helper
@@ -60,9 +108,6 @@ function jsonResponse(data: unknown, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
 }
@@ -82,6 +127,164 @@ function handleCors() {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
+}
+
+// POST /api/admin/otp/send — send OTP email (no auth required)
+async function sendOTP(context: Context, sql: ReturnType<typeof neon>) {
+  try {
+    const body = await context.request.json();
+    const { email } = body;
+
+    if (!email) {
+      return errorResponse("Email is required", 400);
+    }
+
+    // Check if this email is the allowed admin email
+    const adminEmail = Netlify.env.get("ADMIN_EMAIL");
+    if (!adminEmail) {
+      console.error("ADMIN_EMAIL not configured");
+      return errorResponse("Admin login not configured", 500);
+    }
+
+    if (email.toLowerCase() !== adminEmail.toLowerCase()) {
+      // Don't reveal whether the email exists — just say "sent"
+      // This prevents email enumeration
+      return jsonResponse({ sent: true });
+    }
+
+    // Clean up expired OTP codes
+    await sql`DELETE FROM otp_codes WHERE expires_at < NOW()`;
+
+    // Rate limit: max 5 OTP requests per email in last 15 minutes
+    const recentCodes = await sql`
+      SELECT COUNT(*) as count FROM otp_codes
+      WHERE email = ${email.toLowerCase()}
+        AND created_at > NOW() - INTERVAL '15 minutes'
+    `;
+
+    if (recentCodes[0].count >= 5) {
+      return errorResponse("Too many attempts. Try again later.", 429);
+    }
+
+    // Generate OTP (expires in 10 minutes)
+    const code = generateOTP();
+    await sql`
+      INSERT INTO otp_codes (email, code, expires_at)
+      VALUES (${email.toLowerCase()}, ${code}, NOW() + INTERVAL '10 minutes')
+    `;
+
+    // Send OTP via Resend
+    const resendApiKey = Netlify.env.get("RESEND_API_KEY");
+    const fromEmail = Netlify.env.get("FROM_EMAIL");
+
+    if (!resendApiKey || !fromEmail) {
+      console.error("Email config missing: RESEND_API_KEY or FROM_EMAIL");
+      return errorResponse("Email service not configured", 500);
+    }
+
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [email],
+        subject: `Your Scale Rebel admin login code: ${code}`,
+        html: `
+          <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 420px; margin: 0 auto; padding: 40px 20px;">
+            <div style="background-color: #0F0F0F; border-radius: 8px; padding: 40px; text-align: center;">
+              <h1 style="color: #E8E4DF; font-size: 20px; margin: 0 0 8px 0;">Scale Rebel Admin</h1>
+              <p style="color: #888; font-size: 14px; margin: 0 0 32px 0;">Your one-time login code</p>
+              <div style="background-color: #1A1A1A; border: 1px solid #2A2A2A; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+                <span style="color: #E8E4DF; font-size: 36px; font-weight: 700; letter-spacing: 8px;">${code}</span>
+              </div>
+              <p style="color: #888; font-size: 13px; margin: 0;">This code expires in 10 minutes.</p>
+              <p style="color: #888; font-size: 13px; margin: 8px 0 0 0;">If you didn't request this, ignore this email.</p>
+            </div>
+          </div>
+        `,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const errorData = await emailResponse.json().catch(() => ({}));
+      console.error("Resend API error:", errorData);
+      return errorResponse("Failed to send verification email", 500);
+    }
+
+    return jsonResponse({ sent: true });
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    return errorResponse("Failed to send verification code", 500);
+  }
+}
+
+// POST /api/admin/otp/verify — verify OTP and create session (no auth required)
+async function verifyOTP(context: Context, sql: ReturnType<typeof neon>) {
+  try {
+    const body = await context.request.json();
+    const { email, code } = body;
+
+    if (!email || !code) {
+      return errorResponse("Email and code are required", 400);
+    }
+
+    // Check if this email is the allowed admin email
+    const adminEmail = Netlify.env.get("ADMIN_EMAIL");
+    if (!adminEmail || email.toLowerCase() !== adminEmail.toLowerCase()) {
+      return errorResponse("Invalid code", 401);
+    }
+
+    // Find valid OTP
+    const otpCodes = await sql`
+      SELECT * FROM otp_codes
+      WHERE email = ${email.toLowerCase()}
+        AND code = ${code}
+        AND expires_at > NOW()
+        AND used = FALSE
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    if (otpCodes.length === 0) {
+      return errorResponse("Invalid or expired code", 401);
+    }
+
+    // Mark OTP as used
+    await sql`UPDATE otp_codes SET used = TRUE WHERE id = ${otpCodes[0].id}`;
+
+    // Clean up old sessions for this email
+    await sql`DELETE FROM admin_sessions WHERE expires_at < NOW()`;
+
+    // Create session (valid for 24 hours)
+    const token = generateSessionToken();
+    await sql`
+      INSERT INTO admin_sessions (token, email, expires_at)
+      VALUES (${token}, ${email.toLowerCase()}, NOW() + INTERVAL '24 hours')
+    `;
+
+    return jsonResponse({ token, expiresIn: 86400 });
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    return errorResponse("Verification failed", 500);
+  }
+}
+
+// POST /api/admin/otp/logout — invalidate session
+async function logout(context: Context, sql: ReturnType<typeof neon>) {
+  try {
+    const authHeader = context.request.headers.get("Authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
+      await sql`DELETE FROM admin_sessions WHERE token = ${token}`;
+    }
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    return jsonResponse({ success: true }); // Always succeed for logout
+  }
 }
 
 // GET /api/admin/clients - list all or get single client
@@ -109,13 +312,13 @@ async function getClients(
         ORDER BY created_at DESC
       `;
 
-      return jsonResponse({ ...client, inquiries });
+      return jsonResponse({ client: { ...client, inquiries } });
     } else {
       // Get all clients
       const clients = await sql`
         SELECT * FROM clients ORDER BY updated_at DESC
       `;
-      return jsonResponse(clients);
+      return jsonResponse({ clients });
     }
   } catch (error) {
     console.error("Error fetching clients:", error);
@@ -218,7 +421,7 @@ async function deleteClient(
       return errorResponse("Client not found", 404);
     }
 
-    return jsonResponse({ message: "Client deleted", client: result[0] });
+    return jsonResponse({ success: true, message: "Client deleted", client: result[0] });
   } catch (error) {
     console.error("Error deleting client:", error);
     return errorResponse("Failed to delete client", 500);
@@ -239,7 +442,7 @@ async function getInquiries(
       LEFT JOIN clients ON inquiries.client_id = clients.id
       ORDER BY inquiries.created_at DESC
     `;
-    return jsonResponse(inquiries);
+    return jsonResponse({ inquiries });
   } catch (error) {
     console.error("Error fetching inquiries:", error);
     return errorResponse("Failed to fetch inquiries", 500);
@@ -253,16 +456,16 @@ async function linkInquiry(
 ) {
   try {
     const body = await context.request.json();
-    const { inquiryId, clientId } = body;
+    const { inquiry_id, client_id } = body;
 
-    if (!inquiryId || !clientId) {
-      return errorResponse("inquiryId and clientId are required", 400);
+    if (!inquiry_id || !client_id) {
+      return errorResponse("inquiry_id and client_id are required", 400);
     }
 
     const result = await sql`
       UPDATE inquiries
-      SET client_id = ${parseInt(clientId)}
-      WHERE id = ${parseInt(inquiryId)}
+      SET client_id = ${parseInt(client_id)}
+      WHERE id = ${parseInt(inquiry_id)}
       RETURNING *
     `;
 
@@ -270,7 +473,7 @@ async function linkInquiry(
       return errorResponse("Inquiry not found", 404);
     }
 
-    return jsonResponse(result[0]);
+    return jsonResponse({ success: true, inquiry: result[0] });
   } catch (error) {
     console.error("Error linking inquiry:", error);
     return errorResponse("Failed to link inquiry", 500);
@@ -284,17 +487,30 @@ export default async function handler(context: Context) {
     return handleCors();
   }
 
-  // Check authentication
-  if (!checkAuth(context)) {
-    return errorResponse("Unauthorized", 401);
-  }
-
   // Initialize database
   const sql = neon();
   await initializeDatabase(sql);
 
   const url = new URL(context.request.url);
   const pathname = url.pathname;
+
+  // OTP routes (no auth required)
+  if (context.request.method === "POST") {
+    if (pathname.match(/\/api\/admin\/otp\/send$/)) {
+      return await sendOTP(context, sql);
+    }
+    if (pathname.match(/\/api\/admin\/otp\/verify$/)) {
+      return await verifyOTP(context, sql);
+    }
+    if (pathname.match(/\/api\/admin\/otp\/logout$/)) {
+      return await logout(context, sql);
+    }
+  }
+
+  // All other routes require authentication
+  if (!(await checkAuth(context, sql))) {
+    return errorResponse("Unauthorized", 401);
+  }
 
   // Route handling
   try {
