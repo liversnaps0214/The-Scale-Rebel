@@ -53,6 +53,12 @@
     # Remove server identification where possible
     X-Powered-By = ""
 
+# Admin panel - allow inline scripts (password-protected, not public-facing)
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+
 # ============================================================================
 # CACHING RULES
 # ============================================================================
