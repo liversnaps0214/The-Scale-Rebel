@@ -80,8 +80,8 @@ function generateSessionToken(): string {
 }
 
 // Session-based authentication
-async function checkAuth(context: Context, sql: ReturnType<typeof neon>): Promise<boolean> {
-  const authHeader = context.request.headers.get("Authorization");
+async function checkAuth(request: Request, sql: ReturnType<typeof neon>): Promise<boolean> {
+  const authHeader = request.headers.get("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return false;
@@ -130,9 +130,9 @@ function handleCors() {
 }
 
 // POST /api/admin/otp/send — send OTP email (no auth required)
-async function sendOTP(context: Context, sql: ReturnType<typeof neon>) {
+async function sendOTP(request: Request, sql: ReturnType<typeof neon>) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { email } = body;
 
     if (!email) {
@@ -243,9 +243,9 @@ async function sendOTP(context: Context, sql: ReturnType<typeof neon>) {
 }
 
 // POST /api/admin/otp/verify — verify OTP and create session (no auth required)
-async function verifyOTP(context: Context, sql: ReturnType<typeof neon>) {
+async function verifyOTP(request: Request, sql: ReturnType<typeof neon>) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { email, code } = body;
 
     if (!email || !code) {
@@ -294,9 +294,9 @@ async function verifyOTP(context: Context, sql: ReturnType<typeof neon>) {
 }
 
 // POST /api/admin/otp/logout — invalidate session
-async function logout(context: Context, sql: ReturnType<typeof neon>) {
+async function logout(request: Request, sql: ReturnType<typeof neon>) {
   try {
-    const authHeader = context.request.headers.get("Authorization");
+    const authHeader = request.headers.get("Authorization");
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.replace("Bearer ", "");
       await sql`DELETE FROM admin_sessions WHERE token = ${token}`;
@@ -310,11 +310,11 @@ async function logout(context: Context, sql: ReturnType<typeof neon>) {
 
 // GET /api/admin/clients - list all or get single client
 async function getClients(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
-    const url = new URL(context.request.url);
+    const url = new URL(request.url);
     const clientId = url.searchParams.get("id");
 
     if (clientId) {
@@ -349,11 +349,11 @@ async function getClients(
 
 // POST /api/admin/clients - create new client
 async function createClient(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { name, email, phone, company, status = "lead", budget, deadline, cost, notes } = body;
 
     if (!name) {
@@ -375,11 +375,11 @@ async function createClient(
 
 // PUT /api/admin/clients - update client
 async function updateClient(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { id, name, email, phone, company, status, budget, deadline, cost, notes } = body;
 
     if (!id) {
@@ -422,11 +422,11 @@ async function updateClient(
 
 // DELETE /api/admin/clients - delete client
 async function deleteClient(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { id } = body;
 
     if (!id) {
@@ -451,7 +451,7 @@ async function deleteClient(
 
 // GET /api/admin/inquiries - list all inquiries
 async function getInquiries(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
@@ -472,11 +472,11 @@ async function getInquiries(
 
 // POST /api/admin/inquiries/link - link inquiry to client
 async function linkInquiry(
-  context: Context,
+  request: Request,
   sql: ReturnType<typeof neon>
 ) {
   try {
-    const body = await context.request.json();
+    const body = await request.json();
     const { inquiry_id, client_id } = body;
 
     if (!inquiry_id || !client_id) {
@@ -501,10 +501,10 @@ async function linkInquiry(
   }
 }
 
-// Main handler
-export default async function handler(context: Context) {
+// Main handler — Netlify Functions V2: first arg is Request, second is Context
+export default async function handler(request: Request, context: Context) {
   // Handle CORS preflight
-  if (context.request.method === "OPTIONS") {
+  if (request.method === "OPTIONS") {
     return handleCors();
   }
 
@@ -513,58 +513,58 @@ export default async function handler(context: Context) {
     const sql = neon();
     await initializeDatabase(sql);
 
-    const url = new URL(context.request.url);
+    const url = new URL(request.url);
     const pathname = url.pathname;
 
     // OTP routes (no auth required)
-    if (context.request.method === "POST") {
+    if (request.method === "POST") {
       if (pathname.match(/\/api\/admin\/otp\/send$/)) {
-        return await sendOTP(context, sql);
+        return await sendOTP(request, sql);
       }
       if (pathname.match(/\/api\/admin\/otp\/verify$/)) {
-        return await verifyOTP(context, sql);
+        return await verifyOTP(request, sql);
       }
       if (pathname.match(/\/api\/admin\/otp\/logout$/)) {
-        return await logout(context, sql);
+        return await logout(request, sql);
       }
     }
 
     // All other routes require authentication
-    if (!(await checkAuth(context, sql))) {
+    if (!(await checkAuth(request, sql))) {
       return errorResponse("Unauthorized", 401);
     }
 
     // GET routes
-    if (context.request.method === "GET") {
+    if (request.method === "GET") {
       if (pathname.match(/\/api\/admin\/clients$/)) {
-        return await getClients(context, sql);
+        return await getClients(request, sql);
       }
       if (pathname.match(/\/api\/admin\/inquiries$/)) {
-        return await getInquiries(context, sql);
+        return await getInquiries(request, sql);
       }
     }
 
     // POST routes
-    if (context.request.method === "POST") {
+    if (request.method === "POST") {
       if (pathname.match(/\/api\/admin\/clients$/)) {
-        return await createClient(context, sql);
+        return await createClient(request, sql);
       }
       if (pathname.match(/\/api\/admin\/inquiries\/link$/)) {
-        return await linkInquiry(context, sql);
+        return await linkInquiry(request, sql);
       }
     }
 
     // PUT routes
-    if (context.request.method === "PUT") {
+    if (request.method === "PUT") {
       if (pathname.match(/\/api\/admin\/clients$/)) {
-        return await updateClient(context, sql);
+        return await updateClient(request, sql);
       }
     }
 
     // DELETE routes
-    if (context.request.method === "DELETE") {
+    if (request.method === "DELETE") {
       if (pathname.match(/\/api\/admin\/clients$/)) {
-        return await deleteClient(context, sql);
+        return await deleteClient(request, sql);
       }
     }
 
