@@ -146,9 +146,10 @@ async function sendOTP(request: Request, sql: ReturnType<typeof neon>) {
       return errorResponse("Admin login not configured", 500);
     }
 
-    if (email.toLowerCase() !== adminEmail.toLowerCase()) {
+    if (email.trim().toLowerCase() !== adminEmail.trim().toLowerCase()) {
       // Don't reveal whether the email exists — just say "sent"
       // This prevents email enumeration
+      console.log("OTP: email mismatch", { provided: email.trim().toLowerCase(), expected: adminEmail.trim().toLowerCase() });
       return jsonResponse({ sent: true });
     }
 
@@ -229,12 +230,14 @@ async function sendOTP(request: Request, sql: ReturnType<typeof neon>) {
       }),
     });
 
+    const resendResult = await emailResponse.json().catch(() => ({}));
+
     if (!emailResponse.ok) {
-      const errorData = await emailResponse.json().catch(() => ({}));
-      console.error("Resend API error:", errorData);
+      console.error("Resend API error:", resendResult);
       return errorResponse("Failed to send verification email", 500);
     }
 
+    console.log("OTP email sent successfully via Resend:", JSON.stringify(resendResult));
     return jsonResponse({ sent: true });
   } catch (error) {
     console.error("Error sending OTP:", error);
